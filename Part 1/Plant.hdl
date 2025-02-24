@@ -1,0 +1,21 @@
+CHIP Plant{
+IN x,y,z;
+OUT F;
+
+PARTS:
+// Put your implementation here.
+    Not(in=x,out=Nx);
+    Not(in=z,out=Nz);
+    And(a=Nx,b=z,out=Result1);
+    And(a=y,b=Nz,out=Result2);
+    Or(a=Result1,b=Result2,out=F);
+}
+
+/*Boolean algebra simplification
+ * Note: Use "!" as NOT
+ *     !x!yz + !xy!z + !xyz + xy!z
+ * =>  !xz(!y+y) + y!z(!x+x)
+ * =>  !xz(1) + y!z(1)
+ * =>  !xz + y!z
+ * =>  (NOT(x) AND z) OR (y AND NOT(z))
+ */

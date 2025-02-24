@@ -1,0 +1,112 @@
+
+/**
+ * The MyALU. is the ALU of YOUR OWN design that provides the same functions as in the Nand2Tetris project + additional functions (and uses different control bits.
+ * Computes one of the following functions:
+ * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
+ * x+1, y+1, x-1, y-1, x&y, x|y , x XOR y, on two 16-bit inputs, 
+ * according to 6 input bits denoted zx,nx,zy,ny,f,no.
+ * In addition, the ALU computes two 1-bit outputs:
+ * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
+ * if the ALU output < 0, ng is set to 1; otherwise ng is set to 0.
+ */
+
+// Implementation: the ALU logic manipulates the x and y inputs
+
+
+
+CHIP MyALU {
+    IN  
+        x[16], y[16],// 16-bit inputs     
+        C0, // Control Bit 0 (Least significant)
+        C1, // Control Bit 1
+        C2, // Control Bit 2 
+        C3,  // Control Bit 3
+		C4; // Control Bit 4 (Most significant - 5th Control bit)
+        
+
+    OUT 
+        out[16], // 16-bit output
+        zr, // 1 if (out == 0), 0 otherwise
+        ng; // 1 if (out < 0),  0 otherwise
+
+    PARTS:
+        // one
+        Inc16(in=false, out=One);
+        //-1
+        Not16(in=One, out=NotOne);
+        Inc16(in=NotOne, out=NegOne);
+        //NotX
+        Not16(in=x, out=NotX);
+        //NotY
+        Not16(in=y, out=NotY);
+        //NegX
+        Inc16(in=NotX, out=NegX);
+        //NegY
+        Inc16(in=NotY, out=NegY);
+
+        //Adders:
+        //X+1
+        Add16(a=x, b=One, out=XAddOne);
+        //Y+1
+        Add16(a=y, b=One, out=YAddOne);
+        //X-1
+        Add16(a=x, b=NegOne, out=XAddNegOne);
+        //Y-1
+        Add16(a=y, b=NegOne, out=YAddNegOne);
+        //X+Y
+        Add16(a=x, b=y, out=XAddY);
+        //X-Y
+        Add16(a=x, b=NegY, out=XAddNegY);
+        //Y-X
+        Add16(a=y, b=NegX, out=YAddNegX);
+
+        //Logic Gates
+        //And
+        And16(a=x, b=y, out=XAndY);
+        //OR
+        Or16(a=x, b=y, out=XOrY);
+        //Xor
+        Xor16(a=x, b=y, out=XXorY);
+        
+
+        //Mux Selection
+        //First layer of mux4way
+        //Separating the 19 input into 5 groups of mux4way
+        Mux4Way16(a=false, b=One, c=NegOne, d=x, sel[0]=C0, sel[1]=C1, out=OutA);
+        Mux4Way16(a=y, b=NotX, c=NotY, d=NegX, sel[0]=C0, sel[1]=C1, out=OutB);
+        Mux4Way16(a=NegY, b=XAddOne, c=YAddOne, d=XAddNegOne, sel[0]=C0, sel[1]=C1, out=OutC);
+        Mux4Way16(a=YAddNegOne, b=XAddY, c=XAddNegY, d=YAddNegX, sel[0]=C0, sel[1]=C1, out=OutD);
+        //Logic gate group
+        Mux4Way16(a=XAndY, b=XOrY, c=XXorY, d=XXorY, sel[0]=C0, sel[1]=C1, out=OutLogic); //Note: Since sel[0] = 1 sel[1] = 1 is not defined, input d is the same as c to prevent error if invalid state is called
+        
+        //Second layer mux to choose between the 4 groups of mux4way *Excluding the logic gate group
+        Mux16(a=OutA, b=OutB, sel=C2, out=OutAB);
+        Mux16(a=OutC, b=OutD, sel=C2, out=OutCD);
+
+        //Thrid layer mux to choose from either group AB or group CD
+        Mux16(a=OutAB, b=OutCD, sel=C3, out=ABorCD);
+
+        //Fourth layer mux to choose outputs are from the logic gate group or from the first four initial groups
+        Mux16(a=ABorCD, b=OutLogic, sel=C4, out=out, out=tempzr, out[15]=ng); //Note: Output most significant bit to ng as any negative num will have a MSB of 1
+
+        //zr logic
+        Or16Way(in=tempzr, out=Notzr);
+        Not(in=Notzr, out=zr);
+        
+
+        //Implemented an Or16Way to compare each of the 16bits from the 16 bits output to each other.
+        //If either of the bit is 1 the gate will return 1.
+        //Not gate is used to inverse the result for the desired zr
+        //Reference: https://stackoverflow.com/questions/576242/how-do-i-set-output-flags-for-alu-in-nand-to-tetris-course
+
+
+
+
+
+
+
+
+        
+
+
+}
