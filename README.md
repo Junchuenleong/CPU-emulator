@@ -84,4 +84,4 @@ The ALU should correctly perform arithmetic and logical operations.
 ---
 
 ## Author
-Developed by [Your Name/Team].
+Developed by [Leong Jun Chuen].
